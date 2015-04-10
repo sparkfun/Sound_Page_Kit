@@ -37,7 +37,7 @@ Distributed as-is; no warranty is given.
 #include <SPI.h>              // To talk to the SD card and MP3 chip
 #include <SdFat.h>            // SD card file system
 #include <SFEMP3Shield.h>     // MP3 decoder chip
-#include <CapacitiveSensor.h> // Capacitive touch library
+#include <CapacitiveSensor.h> // Capacitive touch/ library
 
 // Debug
 // Set to 0 for no Serial messages, 1 for debug messages
