@@ -39,8 +39,12 @@ Distributed as-is; no warranty is given.
 #include <SFEMP3Shield.h>     // MP3 decoder chip
 #include <CapacitiveSensor.h> // Capacitive touch library
 
+// Debug
+// Set to 0 for no Serial messages, 1 for debug messages
+// Note that T4 and T5 cannot be used with Serial
+#define DEBUG                0
+
 // Constants
-#define DEBUG                1    // Set to 0 for no Serial messages
 #define EN_GPIO_1            A2   // Amp enable + MIDI/MP3 mode select
 #define SD_CS_PIN            9    // Chip select for SD card
 #define TOUCH_THRESHOLD      200  // Arbitrary threshold value
@@ -51,10 +55,10 @@ CapacitiveSensor cs_1 = CapacitiveSensor(A4, A0);
 CapacitiveSensor cs_2 = CapacitiveSensor(A4, 1);
 CapacitiveSensor cs_3 = CapacitiveSensor(A4, 0);
 CapacitiveSensor cs[3] = {cs_1, cs_2, cs_3};
-SFEMP3Shield MP3Player;
+SFEMP3Shield mp3_player;
 SdFat sd;
 boolean interrupt_sound = true; // New trigger stops audio and starts new audio
-boolean interrupt_self = true;  // Same trigger will stop audio
+boolean stop_self = true;       // Same trigger will stop audio
 char filename[5][13];           // Short (8.3) filenames are used + null char
 
 
@@ -64,6 +68,7 @@ void setup() {
   SdFile file;
   byte result;
   char temp_filename[13];
+  int i;
   
   // Put the MP3 chip in MP3 mode and disable amplifier chip
   pinMode(EN_GPIO_1, OUTPUT);
@@ -78,19 +83,20 @@ void setup() {
 #if DEBUG
   Serial.print(F("Initializing SD card... "));
 #endif
-  result = sd.begin(SD_CS, SPI_HALF_SPEED);
+  result = sd.begin(SD_CS_PIN, SPI_HALF_SPEED);
 #if DEBUG
   if ( result != 1 ) {
     Serial.println(F("error, halting."));
   } else {
     Serial.println(F("success!"));
   }
+#endif
   
   // Start the MP3 library
 #if DEBUG
   Serial.print(F("Initializing MP3 chip... "));
 #endif
-  result = MP3player.begin();
+  result = mp3_player.begin();
 #if DEBUG
   if ( (result != 0) && (result != 6) ) {
     Serial.print(F("error code "));
@@ -108,7 +114,7 @@ void setup() {
 
   // Start at the first file in root and step through all of them
   sd.chdir("/", true);
-  while ( file.openNext(sd.vwd(), 0_READ) ) {
+  while ( file.openNext(sd.vwd(), O_READ) ) {
     
     // Get filename
     file.getFilename(temp_filename);
@@ -135,9 +141,101 @@ void setup() {
     }
     file.close();
   }
+
+  // List all the files we saved
+#if DEBUG
+  Serial.println(F("Done reading root directory"));
+  for ( i = 0; i <= 2; i++ ) {
+    Serial.print(F("Trigger "));
+    Serial.print(i + 1);
+    Serial.print(F(": "));
+    Serial.println(filename[i]);
+  }
+#endif
+
+  // Set the VS1053 volume
+  mp3_player.setVolume(VOLUME, VOLUME);
+  
+  // Turn on the amplifier chip
+  digitalWrite(EN_GPIO_1, HIGH);
+  delay(2);
 }
  
 void loop() {
-  // put your main code here, to run repeatedly:
+  
+  int t;
+  static int last_t;
+  int i;
+  byte result;
+  long total;
 
+  // Step through the trigger inputs, looking for touch events
+  for ( t = 1; t <= 3; t++ ) {
+    
+    // Check if a touch event occurred
+    total = cs[t - 1].capacitiveSensor(30);
+    Serial.println(total);
+    if ( total > TOUCH_THRESHOLD ) {
+      
+      // If so, wait for the event to end by at least 50 ms
+      i = 0;
+      while ( i < 50 ) {
+        total = cs[t - 1].capacitiveSensor(30);
+        if ( total < TOUCH_THRESHOLD ) {
+          i++;
+        } else {
+          i = 0;
+        }
+        delay(1);
+      }
+      
+#if DEBUG
+      Serial.print(F("Got trigger "));
+      Serial.println(t);
+#endif
+
+      // Do we have a valid filename for this trigger?
+      if ( filename[t - 1][0] == 0 ) {
+#if DEBUG
+        Serial.println(F("No file with that number"));
+#endif
+      } else {
+        
+        // If we have the same trigger, stop sound
+        // If it's a different trigger, play new sound
+        if ( stop_self && mp3_player.isPlaying() && 
+             (t == last_t) ) {
+#if DEBUG
+          Serial.println(F("Stopping playback"));
+#endif
+          mp3_player.stopTrack();
+        } else {
+          if ( interrupt_sound && mp3_player.isPlaying() ) {
+#if DEBUG
+            Serial.println(F("Interrupting playback"));
+#endif
+            mp3_player.stopTrack();
+          }
+          result = mp3_player.playMP3(filename[t - 1]);
+            
+          // Save playing trigger
+          if ( result == 0 ) {
+            last_t = t;
+          }
+        
+#if DEBUG
+          if ( result != 0 ) {
+            Serial.print(F("Error "));
+            Serial.print(result);
+            Serial.print(F(" when trying to play track "));
+          } else {
+            Serial.print(F("Playing "));
+          }
+          Serial.println(filename[t - 1]);
+#endif
+        }
+      }
+    }
+  }
 }
+
