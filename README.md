@@ -7,6 +7,7 @@ A promo kit designed to showcase conductive ink and paper circuits. Users follow
 -------------------
 
 * **/Firmware** - Any firmware used in the kit
+* **/Libraries** - Libraries used in the kit
 * **/Resources** - Sound clips
 
 License Information

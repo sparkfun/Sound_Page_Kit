@@ -8,13 +8,6 @@
  Version 04 by Paul Stoffregen - Arduino 1.0 compatibility, issue 146 fix
  vim: set ts=4:
  */
- 
-/*
- Modified by Shawn Hymel @ SparkFun Electronics
- April 10, 2015
- 
- Changed the timeout from 2000 milliseconds to 100 milliseconds
-*/
 
 #if ARDUINO >= 100
 #include "Arduino.h"
@@ -36,8 +29,7 @@ CapacitiveSensor::CapacitiveSensor(uint8_t sendPin, uint8_t receivePin)
 	error = 1;
 	loopTimingFactor = 310;		// determined empirically -  a hack
 
-    // *** SRH: Changed timeout from 2000 to 100 milliseconds ***
-    //CS_Timeout_Millis = (2000 * (float)loopTimingFactor * (float)F_CPU) / 16000000;
+    // ***SRH: Changed 2000 ms timeout to 100 ms timeout
 	CS_Timeout_Millis = (100 * (float)loopTimingFactor * (float)F_CPU) / 16000000;
 	CS_AutocaL_Millis = 20000;
 
