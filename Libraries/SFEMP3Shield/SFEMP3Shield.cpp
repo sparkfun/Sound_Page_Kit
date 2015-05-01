@@ -18,11 +18,13 @@
  * This is a table to decode the bitrate as per the MP3 file format,
  * as read by the SdCard
  *
+ * Modified by Shawn Hymel (SparkFun Electronics) to include the const keyword.
+ *
  * \link http://www.mp3-tech.org/programmer/frame_header.html \endlink
  * \note PROGMEM macro forces to Flash space.
  * \warning This consums 190 bytes of flash
  */
-PROGMEM uint16_t bitrate_table[15][6] = {
+const PROGMEM uint16_t bitrate_table[15][6] = {
                  { 0,   0,  0,  0,  0,  0}, //0000
                  { 32, 32, 32, 32,  8,  8}, //0001
                  { 64, 48, 40, 48, 16, 16}, //0010
