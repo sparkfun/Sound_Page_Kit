@@ -19,10 +19,6 @@ Hardware Connections (with conductive ink):
 Resources:
 Include SPI.h, SdFat.h, SFEMP3Shield.h, CapacitiveSensor.h
 
-Include SoftwareSerial.h, Chaplex.h, SparkFun_LED_8x7.h, EEPROM.h
-The Chaplex library can be found at: 
-http://playground.arduino.cc/Code/Chaplex
-
 Development environment specifics:
 Written in Arduino 1.6.1
 Tested with LilyPad MP3
